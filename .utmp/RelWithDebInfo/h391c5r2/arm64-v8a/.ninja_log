@@ -1,0 +1,23 @@
+# ninja log v5
+52	3508	7909822798525761	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	ce0aaee434461523
+107	677	7909822770242923	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	bc1b96331e79fa90
+678	4903	7909822790258846	D:/ProjectGames/SPA_Tycoon/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/h391c5r2/obj/arm64-v8a/libswappywrapper.so	77dac1bbf8fa28ca
+100	3172	7909822795222866	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4d415b555dd9936d
+23	2942	7909822792871817	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f34a01efdc8f2a16
+58	3052	7909822793979640	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	fdd7d0f74a7edb95
+72	2971	7909822793201400	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	bf538e1198160c2
+64	2895	7909822792402486	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	a23de58ab1f6465
+91	2886	7909822792312462	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	436f51a1749e28f3
+82	3351	7909822797005231	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	67f1feb4d84fa04b
+3508	3701	7909822800525775	D:/ProjectGames/SPA_Tycoon/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/h391c5r2/obj/arm64-v8a/libgame.so	8903ecced0e5caa5
+103	851	7909841874561139	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	bc1b96331e79fa90
+87	2298	7909841889054311	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	436f51a1749e28f3
+56	2331	7909841889400218	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	a23de58ab1f6465
+71	2382	7909841889921742	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	bf538e1198160c2
+23	2393	7909841890023384	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	f34a01efdc8f2a16
+50	2462	7909841890733701	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	fdd7d0f74a7edb95
+94	2561	7909841891738953	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	4d415b555dd9936d
+79	2728	7909841893379581	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	67f1feb4d84fa04b
+64	2868	7909841894799935	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	ce0aaee434461523
+2868	3055	7909841896701533	D:/ProjectGames/SPA_Tycoon/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/h391c5r2/obj/arm64-v8a/libgame.so	8903ecced0e5caa5
+852	7096	7909841932477383	D:/ProjectGames/SPA_Tycoon/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/h391c5r2/obj/arm64-v8a/libswappywrapper.so	77dac1bbf8fa28ca
