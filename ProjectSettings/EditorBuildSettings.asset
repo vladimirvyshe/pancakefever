@@ -15,5 +15,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Selo_Level.unity
     guid: 36149b824964d584c8d386b740d6b81a
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 5c357ed67a246c34781b94be8c5aa89d, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+    com.unity.localization.settings: {fileID: 11400000, guid: 3476dc5fbd3874e42965a5a0447f9cd8, type: 2}
   m_UseUCBPForAssetBundles: 0

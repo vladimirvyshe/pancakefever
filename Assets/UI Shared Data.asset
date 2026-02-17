@@ -1,0 +1,296 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: UI Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: UI
+  m_TableCollectionNameGuidString: 8dc94a8fe71b9464fb2ba458cbb35814
+  m_Entries:
+  - m_Id: 244717536522240
+    m_Key: action_pack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276703850496
+    m_Key: btn_play_play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242133362913280
+    m_Key: burn_penalty_coins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1046679257460736
+    m_Key: burn_result_lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1046724849545216
+    m_Key: burn_result_saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1037934385278976
+    m_Key: cook_action_finish
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1037922255351808
+    m_Key: cook_action_flip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1037945311440896
+    m_Key: cook_action_new
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1037884712136704
+    m_Key: cook_action_pour
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1037956728336384
+    m_Key: cook_action_wait
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038246596685824
+    m_Key: cook_hint_burned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038234210906112
+    m_Key: cook_hint_done
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038262061084672
+    m_Key: cook_hint_empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038185217241088
+    m_Key: cook_hint_press_finish
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038156536590336
+    m_Key: cook_hint_press_flip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038200820051968
+    m_Key: cook_hint_side_1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1038219941883904
+    m_Key: cook_hint_side_2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 245181938249728
+    m_Key: day_end_earned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 245204923035648
+    m_Key: day_end_earned_x2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 245778926120960
+    m_Key: day_progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049502690947072
+    m_Key: decor_available_from_day
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049801665130496
+    m_Key: decor_bonus_income
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049595456368640
+    m_Key: decor_buy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049693884100608
+    m_Key: decor_disable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049747063681024
+    m_Key: decor_enable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049526371987456
+    m_Key: decor_locked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049636321472512
+    m_Key: decor_not_enough
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049841569738752
+    m_Key: decor_total_income
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1049910503124992
+    m_Key: decor_total_income_zero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 245916142776320
+    m_Key: income_x2_cooldown_5m
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054590692077568
+    m_Key: New Entry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054644974759936
+    m_Key: New Entry 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054685563039744
+    m_Key: New Entry 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054721554362368
+    m_Key: New Entry 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054799279009792
+    m_Key: New Entry 4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234204270276608
+    m_Key: order_empty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 245123285102592
+    m_Key: order_new
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234248721510400
+    m_Key: order_title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241534672154624
+    m_Key: rescue_gain_coins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 244790228004864
+    m_Key: reward_plus_coins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 244118908678144
+    m_Key: score_bad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 244075942227968
+    m_Key: score_good
+    m_Metadata:
+      m_Items: []
+  - m_Id: 244034250846208
+    m_Key: score_perfect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 239022263087104
+    m_Key: shop_available_from_day
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238879363149824
+    m_Key: shop_bought
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238945905782784
+    m_Key: shop_buy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238912074526720
+    m_Key: shop_closed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238976650031104
+    m_Key: shop_not_enough
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6332595154944
+    m_Key: shop_tab_decor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6298851979264
+    m_Key: shop_tab_ingredients
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6245898891264
+    m_Key: shop_tab_main
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6307769069568
+    m_Key: shop_tab_stove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054968351404032
+    m_Key: stove_bonus_burn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054901959766016
+    m_Key: stove_bonus_speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054486543314944
+    m_Key: stove_level
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054523830677504
+    m_Key: stove_max
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1054841029111808
+    m_Key: stove_max_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1055011913445376
+    m_Key: stove_upgrade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1269983654293504
+    m_Key: btn_skip_order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1270405026656256
+    m_Key: btn_x2_ads
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1271305258512384
+    m_Key: result_day
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1271497575739392
+    m_Key: btn_new_day
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1272069330677760
+    m_Key: diamond_perfect_day
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1273146369224704
+    m_Key: stove_shop_nextlevel_text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1274053563625472
+    m_Key: btn_shop_ing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1274087571042304
+    m_Key: btn_shop_stove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1274102477598720
+    m_Key: btn_shop_decor
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 5881715610907574296
+  references:
+    version: 2
+    RefIds:
+    - rid: 5881715610907574296
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1770595688159

@@ -20,6 +20,7 @@ public class AudioManager : MonoBehaviour
 
     [Header("SFX Clips")]
     [SerializeField] private AudioClip burnedSfx;
+    [SerializeField] private AudioClip uiClickSfx; // <-- днаюбэ
 
     private void Awake()
     {
@@ -33,6 +34,11 @@ public class AudioManager : MonoBehaviour
 
         ApplySettings();
         StartMusicIfNeeded();
+    }
+
+    public void PlayUiClickSfx()
+    {
+        PlaySfx(uiClickSfx, 1f);
     }
 
     public void ApplySettings()

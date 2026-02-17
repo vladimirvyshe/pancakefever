@@ -3,19 +3,21 @@ using UnityEngine.Advertisements;
 
 public class AdsManager : MonoBehaviour, IUnityAdsInitializationListener
 {
+    private const bool TEST_MODE = true;
+
 #if UNITY_ANDROID
     private const string GAME_ID = "6032347"; // Android
 #elif UNITY_IOS
     private const string GAME_ID = "6032346"; // iOS
+#else
+    private const string GAME_ID = "6032347"; // Editor/Standalone fallback (можно Android id)
 #endif
-
-    private const bool TEST_MODE = true;
 
     void Awake()
     {
-        Debug.Log("[ADS] Awake AdsManager. supported=" 
-            + Advertisement.isSupported 
-            + " initialized=" 
+        Debug.Log("[ADS] Awake AdsManager. supported="
+            + Advertisement.isSupported
+            + " initialized="
             + Advertisement.isInitialized);
 
         if (!Advertisement.isInitialized && Advertisement.isSupported)
@@ -24,13 +26,9 @@ public class AdsManager : MonoBehaviour, IUnityAdsInitializationListener
         }
     }
 
-    public void OnInitializationComplete()
-    {
+    public void OnInitializationComplete() =>
         Debug.Log("[ADS] Unity Ads initialized successfully");
-    }
 
-    public void OnInitializationFailed(UnityAdsInitializationError error, string message)
-    {
+    public void OnInitializationFailed(UnityAdsInitializationError error, string message) =>
         Debug.LogError($"[ADS] Init failed: {error} - {message}");
-    }
 }

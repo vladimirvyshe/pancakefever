@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 public class DecorShopController : MonoBehaviour
 {
@@ -12,6 +14,8 @@ public class DecorShopController : MonoBehaviour
     {
         public int id;
         public string title;
+        [Tooltip("Localization key in Decor table (optional)")]
+        public string titleKey;
         public int price;
         public int requiredDay = 1;
         public Sprite icon;
@@ -47,6 +51,54 @@ public class DecorShopController : MonoBehaviour
 
     private GameFlowController _game;
     private int _selectedId = 0;
+
+    // ===== Localization helpers =====
+    private const string UI_TABLE = "UI";
+    private const string DECOR_TABLE = "Decor";
+
+    private void OnEnable()
+    {
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
+    }
+
+    private void OnDisable()
+    {
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
+    }
+
+    private void HandleLocaleChanged(Locale _)
+    {
+        // If the shop is open/active, refresh visible texts immediately
+        Refresh();
+    }
+
+    private string L(string table, string key)
+    {
+        return LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+    }
+
+    private void SetLocTextInstant(TMP_Text label, string table, string key)
+    {
+        if (label == null) return;
+        label.text = L(table, key);
+    }
+
+    private void SetLocTextInstantFormat(TMP_Text label, string table, string key, params object[] args)
+    {
+        if (label == null) return;
+        label.text = string.Format(L(table, key), args);
+    }
+
+    private string GetDecorTitle(DecorSetDef def)
+    {
+        if (def == null) return "";
+        if (!string.IsNullOrEmpty(def.titleKey))
+            return L(DECOR_TABLE, def.titleKey);
+
+        // fallback for older data
+        return def.title ?? "";
+    }
+
 
     public void Init(GameFlowController game)
     {
@@ -102,15 +154,15 @@ public class DecorShopController : MonoBehaviour
         if (buffText != null)
         {
             float pct = def.incomeBonus * 100f;
-            buffText.text = pct > 0f ? $"Бонус к прибыли: +{pct:0.#}%" : "";
+            buffText.text = pct > 0f ? string.Format(L(UI_TABLE, "decor_bonus_income"), pct.ToString("0.#")) : "";
         }
 
         if (titleText != null)
         {
             if (!owned && !dayOk)
-                titleText.text = $"Доступно с дня {def.requiredDay}";
+                SetLocTextInstantFormat(titleText, UI_TABLE, "decor_available_from_day", def.requiredDay);
             else
-                titleText.text = def.title;
+                titleText.text = GetDecorTitle(def);
         }
 
         // цена всегда числом (как ты хотел для ингредиентов)
@@ -120,13 +172,13 @@ public class DecorShopController : MonoBehaviour
         if (actionButtonText != null)
         {
             if (!owned && !dayOk)
-                actionButtonText.text = "Закрыто";
+                SetLocTextInstant(actionButtonText, UI_TABLE, "decor_locked");
             else if (!owned)
-                actionButtonText.text = enough ? "Купить" : "Не хватает";
+                SetLocTextInstant(actionButtonText, UI_TABLE, enough ? "decor_buy" : "decor_not_enough");
             else if (active)
-                actionButtonText.text = "Выключить";
+                SetLocTextInstant(actionButtonText, UI_TABLE, "decor_disable");
             else
-                actionButtonText.text = "Включить";
+                SetLocTextInstant(actionButtonText, UI_TABLE, "decor_enable");
         }
 
         if (actionButton != null)
@@ -147,7 +199,7 @@ public class DecorShopController : MonoBehaviour
             float mul = _game.GetDecorIncomeMultiplier(sets); // sets = твой массив DecorSetDef[]
             float totalPct = (mul - 1f) * 100f;
 
-            totalBuffText.text = totalPct > 0.01f ? $"Доход +{totalPct:0.#}%" : "Доход +0%";
+            totalBuffText.text = totalPct > 0.01f ? string.Format(L(UI_TABLE, "decor_total_income"), totalPct.ToString("0.#")) : L(UI_TABLE, "decor_total_income_zero");
         }
     }
 

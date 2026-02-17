@@ -7,23 +7,52 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 public class GameFlowController : MonoBehaviour
 {
 
-    private string IngredientToText(IngredientId id)
+    private string IngredientToKey(IngredientId id)
     {
-        switch (id)
+        return id switch
         {
-            case IngredientId.Jam: return "Джем";
-            case IngredientId.SourCream: return "Крем";
-            case IngredientId.Chocolate: return "Шоколад";
-            case IngredientId.Honey: return "Мёд";
-            case IngredientId.MapleSyrup: return "Кленовый сироп";
-            case IngredientId.PeanutButter: return "Арахисовая паста";
-            default: return "—";
+            IngredientId.Jam => "ing_jam",
+            IngredientId.SourCream => "ing_sour_cream",
+            IngredientId.Chocolate => "ing_chocolate",
+            IngredientId.Honey => "ing_honey",
+            IngredientId.MapleSyrup => "ing_maple_syrup",
+            IngredientId.PeanutButter => "ing_peanut_butter",
+            _ => "ing_unknown"
+        };
+    }
+
+
+    private const string ING_TABLE = "Ingredients";
+
+    private string GetLoc(string table, string key)
+    {
+        if (string.IsNullOrEmpty(key)) return "";
+        try
+        {
+            // If localization isn't initialized yet, return key to avoid null/empty.
+            if (!LocalizationSettings.InitializationOperation.IsDone)
+                return key;
+
+            return LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+        }
+        catch
+        {
+            return key;
         }
     }
+
+    // For places where we need a localized ingredient name synchronously (e.g., building strings).
+    private string IngredientToText(IngredientId id)
+    {
+        return GetLoc(ING_TABLE, IngredientToKey(id));
+    }
+
 
 
     [System.Serializable]
@@ -269,7 +298,7 @@ public class GameFlowController : MonoBehaviour
 
 
 
-
+    private string _actionButtonKey;
 
     private bool _skipVisible;
     private float _skipUiTick;
@@ -304,9 +333,10 @@ public class GameFlowController : MonoBehaviour
     private int _ordersThisDay = 0;
     private int _earnedThisDay = 0;
 
-    private int _burnPenaltyCoins = 5;
+    private int _burnPenaltyCoins = 30;
     private int _coinsBeforeBurn;
     private float _comboBeforeBurn;
+    private int _earnedBeforeBurn;
 
     private bool _skipBlockedByBurnedPopup;
 
@@ -316,6 +346,7 @@ public class GameFlowController : MonoBehaviour
     private bool _dayDoubleChosen = false;
     private bool _dayDoubleClaimed = false;
     private bool _shopOpenedFromDayEnd = false;
+    private bool _forceJamOrderOnce;
 
     private bool _dayAllPerfect = true; // пока день "идеальный"
     private bool _dayHadBurn = false;   // был ли хоть один Burned
@@ -341,6 +372,8 @@ public class GameFlowController : MonoBehaviour
         coins = _progress.coins;
         _dayIndex = _progress.dayIndex;
         stoveLevel = _progress.stoveLevel;
+        _ordersThisDay = _progress.ordersThisDay;
+        _earnedThisDay = _progress.earnedThisDay;
 
         cooking.ApplyStoveLevel(stoveLevel);
 
@@ -473,12 +506,14 @@ public class GameFlowController : MonoBehaviour
     {
         cooking.Cooked += OnCooked;
         cooking.Burned += OnBurned;
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
     }
 
     private void OnDisable()
     {
         cooking.Cooked -= OnCooked;
         cooking.Burned -= OnBurned;
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
     }
 
     private void Start()
@@ -526,6 +561,7 @@ public class GameFlowController : MonoBehaviour
     {
         ClearAllToppingOverlays();
         var prev = _order;
+
         // пытаемся сгенерить другой (несколько попыток)
         Order next = null;
         for (int i = 0; i < 8; i++)
@@ -538,6 +574,14 @@ public class GameFlowController : MonoBehaviour
         _order = next ?? GenerateOrder();
         _added.Clear();
         _selected = null;
+
+        // ✅ если после покупки джема нужно гарантировать джем в заказе
+        if (_forceJamOrderOnce)
+        {
+            EnsureJamInOrder(_order);
+            _forceJamOrderOnce = false; // одноразово
+        }
+
         UpdateOrderText();
         ResetPancakeVisual();              // цвет, начинка
         pancakeRect.localScale = _pancakeStartScale;
@@ -579,6 +623,41 @@ public class GameFlowController : MonoBehaviour
         return o;
     }
 
+    private bool OrderHasJam(Order o)
+    {
+        if (o == null || o.items == null) return false;
+        for (int i = 0; i < o.items.Count; i++)
+            if (o.items[i].id == IngredientId.Jam)
+                return true;
+        return false;
+    }
+
+    private void EnsureJamInOrder(Order o)
+    {
+        if (o == null) return;
+
+        // если уже есть джем — ок
+        if (OrderHasJam(o)) return;
+
+        // если заказ пустой — просто добавим джем
+        if (o.items.Count == 0)
+        {
+            o.items.Add(new OrderItem { id = IngredientId.Jam, count = Random.Range(1, 4) });
+            return;
+        }
+
+        // если уже 2 ингредиента — заменим первый на джем (чтобы сохранить 1–2 айтема как у тебя)
+        if (o.items.Count >= 2)
+        {
+            o.items[0].id = IngredientId.Jam;
+            o.items[0].count = Random.Range(1, 4);
+            return;
+        }
+
+        // если 1 ингредиент — добавим вторым джем
+        o.items.Add(new OrderItem { id = IngredientId.Jam, count = Random.Range(1, 4) });
+    }
+
     private void OnCooked()
     {
         // СРАЗУ после приготовления: включаем начинку и меняем кнопку на "Упаковать"
@@ -594,6 +673,7 @@ public class GameFlowController : MonoBehaviour
 
         _coinsBeforeBurn = coins;
         _comboBeforeBurn = combo;
+        _earnedBeforeBurn = _earnedThisDay;
 
         // штраф
         ResetCombo();
@@ -603,7 +683,19 @@ public class GameFlowController : MonoBehaviour
         int coinsAfter = coins;
         int lostCoins = _coinsBeforeBurn - coinsAfter; // это и есть X (учитывает clamp в 0)
 
-        StartCoroutine(ShowResultPopup($"<color=#7A4E2D>− {lostCoins} монет", "", 0.6f));
+        // ✅ Burn должен уменьшать "заработано за день", чтобы day-end и x2 дня были честными
+        _earnedThisDay = Mathf.Max(0, _earnedThisDay - lostCoins);
+        UpdateDayProgressUI();
+
+        // ✅ Сохраняем сразу, чтобы штраф не терялся при выходе
+        SaveProgress();
+
+        string msg = string.Format(
+            L("UI", "burn_penalty_coins"),
+            lostCoins
+        );
+
+        StartCoroutine(ShowResultPopup(msg, "", 0.6f));
 
         // показать попап
         if (burnedPopup != null)
@@ -711,9 +803,9 @@ public class GameFlowController : MonoBehaviour
 
     private string ScoreTitle(Score s)
     {
-        return s == Score.Perfect ? "ИДЕАЛЬНО!" :
-               s == Score.Good ? "НОРМАЛЬНО" :
-               "ПЛОХО!";
+        return s == Score.Perfect ? L("UI", "score_perfect") :
+               s == Score.Good ? L("UI", "score_good") :
+                                    L("UI", "score_bad");
     }
 
     private void ApplyScoreStyle(Score s)
@@ -748,37 +840,19 @@ public class GameFlowController : MonoBehaviour
 
         UpdateIngredientSelectionUI();
 
-        actionButtonText.text = "Упаковать";
+        SetActionButtonKey("action_pack");
         StartCoroutine(PulseButton(actionButton.transform));
         UpdateOrderText();
     }
 
     private void OnActionButtonClicked()
     {
-
-        TutorialAction action = TutorialAction.None;
-
-        // Pack = если мы в фазе начинки
-        if (_phase == Phase.Filling)
-        {
-            action = TutorialAction.Pack;
-        }
-        // Вся готовка (и "залить", и "перевернуть") у тебя внутри Phase.Cooking,
-        // различаем по состоянию CookingController
-        else if (_phase == Phase.Cooking)
-        {
-            // WaitingPour = значит сейчас кнопка "Залить тесто"
-            if (cooking != null && cooking.CurrentState == CookingController.CookState.WaitingPour)
-                action = TutorialAction.Pour;
-            else
-                action = TutorialAction.Flip;
-        }
-
-        if (tutorial != null)
-            tutorial.NotifyAction(action);
         // 1) Фаза начинки / упаковки
         if (_phase == Phase.Filling)
         {
+            if (tutorial != null)
+                tutorial.NotifyAction(TutorialAction.Pack);
+
             StartCoroutine(PackServeReturn());
             return;
         }
@@ -786,13 +860,19 @@ public class GameFlowController : MonoBehaviour
         // 2) Фаза готовки
         if (_phase == Phase.Cooking)
         {
+            if (cooking == null) return;
+
             var prev = cooking.CurrentState;
 
             // сначала отдаём клик контроллеру готовки
             cooking.HandleActionButton();
 
-            // 1) Если было Burned и нажали "Новый блин" → вернулись в WaitingPour
-            // значит блин НЕ показываем, а прячем и ждём "Залить тесто"
+            // если состояние НЕ изменилось — значит была "..." / действие недоступно
+            // => туториал не трогаем
+            if (cooking.CurrentState == prev)
+                return;
+
+            // Burned -> WaitingPour (Новый блин) туториал тоже не должен двигать
             if (prev == CookingController.CookState.Burned &&
                 cooking.CurrentState == CookingController.CookState.WaitingPour)
             {
@@ -801,15 +881,24 @@ public class GameFlowController : MonoBehaviour
                 return;
             }
 
-            // 2) Если было WaitingPour и после клика началась готовка
-            // значит это было "Залить тесто" → показываем новый блин
+            // определяем, что реально сделали: Pour или Flip
+            TutorialAction action;
             if (prev == CookingController.CookState.WaitingPour &&
                 cooking.CurrentState != CookingController.CookState.WaitingPour)
             {
-                ShowFreshPancake();
+                action = TutorialAction.Pour;
+                ShowFreshPancake(); // это твой текущий хук "после заливки появился блин"
             }
-        }
+            else
+            {
+                action = TutorialAction.Flip;
+            }
 
+            if (tutorial != null)
+                tutorial.NotifyAction(action);
+
+            return;
+        }
     }
 
 
@@ -874,15 +963,27 @@ public class GameFlowController : MonoBehaviour
             ResetCombo();
         }
 
+        // ✅ Decor income bonus (как сейчас: по owned, не по active)
+        float decorMult = 1f;
+        if (decorShop != null)
+            decorMult = GetDecorIncomeMultiplier(decorShop.GetDefs());
+
+        finalReward = Mathf.RoundToInt(finalReward * decorMult);
+
         finalReward = ApplyIncomeBoost(finalReward);
 
         coins += finalReward;
         UpdateMoneyUI();
+
         if (tutorial != null)
             tutorial.OnOrderCompleted(coins);
+
         _ordersThisDay++;
         _earnedThisDay += finalReward;
         UpdateDayProgressUI();
+
+        // ✅ ВАЖНО: сохраняем сразу, чтобы при выходе не терялось
+        SaveProgress();
 
         if (sfxSource != null)
         {
@@ -896,13 +997,13 @@ public class GameFlowController : MonoBehaviour
         ApplyScoreStyle(score);
 
         string title = ScoreTitle(score);
-        string rewardLine = $"+{finalReward} монет";
+        string rewardLine = string.Format(L("UI", "reward_plus_coins"), finalReward);
 
         StartCoroutine(ShowResultPopup(title, rewardLine, 0.6f));
 
 
         // orderText можно оставить для отладки или укоротить:
-        orderText.text = $"Новый заказ...";
+        orderText.text = L("UI", "order_new");
         UpdateMoneyUI();
 
 
@@ -949,7 +1050,7 @@ public class GameFlowController : MonoBehaviour
             int requiredTotalExact = 0;
             foreach (var it in _order.items) requiredTotalExact += it.count;
 
-            reward = 30 + requiredTotalExact * 5;
+            reward = 20 + requiredTotalExact * 4;
             return Score.Perfect;
         }
 
@@ -974,8 +1075,8 @@ public class GameFlowController : MonoBehaviour
 
         if (goodEnough)
         {
-            reward = 10 + Mathf.RoundToInt((30 + requiredTotal * 4) * accuracy) - extra * 2;
-            reward = Mathf.Max(5, reward);
+            reward = 8 + Mathf.RoundToInt((22 + requiredTotal * 3) * accuracy) - extra * 3;
+            reward = Mathf.Max(3, reward);
             return Score.Good;
         }
 
@@ -1028,15 +1129,22 @@ public class GameFlowController : MonoBehaviour
 
         if (_order.items.Count == 0)
         {
-            sb.Append("Заказ: без начинки");
+            sb.Append(L("UI", "order_empty"));
         }
         else
         {
-            sb.Append("Заказ:\n");
+            sb.Append(L("UI", "order_title"));
+            sb.Append("\n");
+
             for (int i = 0; i < _order.items.Count; i++)
             {
                 var it = _order.items[i];
-                sb.Append($"{IngredientToText(it.id)} ×{it.count}");
+
+                // локализованное имя ингредиента
+                string ingName = L("Ingredients", IngredientToKey(it.id));
+
+                sb.Append($"{ingName} x{it.count}");
+
                 if (i < _order.items.Count - 1)
                     sb.Append(",\n");
             }
@@ -1044,6 +1152,7 @@ public class GameFlowController : MonoBehaviour
 
         orderText.text = sb.ToString();
     }
+
 
 
     private void SetFillingUI(bool isFillingPhase)
@@ -1387,7 +1496,7 @@ public class GameFlowController : MonoBehaviour
 
         // текст попапа — про завершённый день
         if (dayEndMoneyText != null)
-            dayEndMoneyText.text = $"День {endedDayIndex}\nЗаработано: {endedEarned}";
+            dayEndMoneyText.text = string.Format(L("UI", "day_end_earned"), endedDayIndex, endedEarned);
 
         // ---------- 2) СРАЗУ ПЕРЕВОДИМ ИГРУ В НОВЫЙ ДЕНЬ + СОХРАНЯЕМ ----------
 
@@ -1428,7 +1537,7 @@ public class GameFlowController : MonoBehaviour
 
         // обновляем ТЕКСТ попапа (теперь уже x2)
         if (dayEndMoneyText != null)
-            dayEndMoneyText.text = $"День {_endedDayIndex}\nЗаработано: {_endedDayEarned * 2}";
+            dayEndMoneyText.text = string.Format(L("UI", "day_end_earned_x2"), _endedDayIndex, _endedDayEarned * 2);
     }
 
     private void UpdateDayProgressUI()
@@ -1438,7 +1547,7 @@ public class GameFlowController : MonoBehaviour
         int total = Mathf.Max(1, ordersPerDay);
         int done = Mathf.Clamp(_ordersThisDay, 0, total);
 
-        dayProgressText.text = $"День {_dayIndex} • {done}/{total}";
+        dayProgressText.text = string.Format(L("UI", "day_progress"), _dayIndex, done, total);
 
         // 🔔 Пульс
         if (_dayPulseRoutine != null)
@@ -1605,6 +1714,12 @@ public class GameFlowController : MonoBehaviour
         // ✅ после закрытия магазина обновляем замочки/иконки слева
         SetFillingUI(_phase == Phase.Filling);
 
+        // ✅ если только что купили джем в туториале — меняем заказ на "с джемом"
+        if (_forceJamOrderOnce)
+        {
+            NewOrder(); // NewOrder сам "съест" флаг (см. ниже)
+        }
+
         // если у тебя туториал ждёт закрытия магазина:
         if (tutorial != null)
             tutorial.OnShopClosed();
@@ -1658,14 +1773,16 @@ public class GameFlowController : MonoBehaviour
 
         if (shopTitleText != null)
         {
-            shopTitleText.text = tab switch
+            string key = tab switch
             {
-                ShopTab.Main => "Магазин",
-                ShopTab.Ingredients => "Ингредиенты",
-                ShopTab.Stove => "Плита",
-                ShopTab.Decor => "Декор",
-                _ => "Магазин"
+                ShopTab.Main => "shop_tab_main",
+                ShopTab.Ingredients => "shop_tab_ingredients",
+                ShopTab.Stove => "shop_tab_stove",
+                ShopTab.Decor => "shop_tab_decor",
+                _ => "shop_tab_main"
             };
+
+            SetLocText(shopTitleText, key);
         }
 
         if (tab == ShopTab.Ingredients)
@@ -1680,8 +1797,8 @@ public class GameFlowController : MonoBehaviour
                 foreach (var it in ingredientItems)
                     if (it != null) it.SetSelectedSilent(it == def);
 
-                // и правую карточку заполни напрямую, без корутины/анимации:
                 ApplyIngredientRightCard(def);
+                // и правую карточку заполни напрямую, без корутины/анимации:
             }
         }
 
@@ -1716,11 +1833,17 @@ public class GameFlowController : MonoBehaviour
 
     private void SaveProgress()
     {
+        // ✅ Пока туториал НЕ пройден — не сохраняем прогресс вообще
+        if (PlayerPrefs.GetInt("tutorial_done", 0) == 0)
+            return;
+
+        if (TutorialBlocksSaving())
+            return;
         _progress.coins = coins;
         _progress.dayIndex = _dayIndex;
         _progress.stoveLevel = stoveLevel;
-        // _progress.decorId = ... (позже)
-        // _progress.ingredientMask = ... (мы будем менять при покупках)
+        _progress.ordersThisDay = _ordersThisDay;
+        _progress.earnedThisDay = _earnedThisDay;
 
 
 
@@ -1895,8 +2018,11 @@ public class GameFlowController : MonoBehaviour
         switch (id)
         {
             case IngredientId.Jam:
+                _forceJamOrderOnce = true; // ✅ после покупки следующая заявка будет с джемом
+
                 if (tutorial != null)
                     tutorial.OnFirstIngredientBought();
+
                 return ProgressService.AddIngredient(mask, ProgressService.IngredientBit.Jam);
             case IngredientId.SourCream:
                 return ProgressService.AddIngredient(mask, ProgressService.IngredientBit.SourCream);
@@ -2270,7 +2396,7 @@ public class GameFlowController : MonoBehaviour
 
         if (!incomeActive)
         {
-            incomeX2ButtonText.text = "5 мин";
+            SetLocText(incomeX2ButtonText, "income_x2_cooldown_5m");
             return;
         }
 
@@ -2317,11 +2443,16 @@ public class GameFlowController : MonoBehaviour
         int beforeRescueCoins = coins;   // тут coins = уже после штраф
         coins = _coinsBeforeBurn;
         int gainedCoins = coins - beforeRescueCoins;   // X
-        StartCoroutine(ShowResultPopup($"<color=#7A4E2D>+ {gainedCoins} монет", "", 0.6f));
+        string msg = string.Format(L("UI", "rescue_gain_coins"), gainedCoins);
+        StartCoroutine(ShowResultPopup(msg, "", 0.6f));
         sfxSource.PlayOneShot(goodClip);
         combo = _comboBeforeBurn;
         UpdateMoneyUI();
         UpdateComboUI();
+
+        _earnedThisDay = _earnedBeforeBurn;
+        UpdateDayProgressUI();
+        SaveProgress();
 
         // закрыть попап
         if (burnedPopup != null)
@@ -2647,32 +2778,36 @@ public class GameFlowController : MonoBehaviour
         bool dayOk = _dayIndex >= Mathf.Max(1, item.requiredDay);
         bool enoughMoney = coins >= item.price;
 
+        // Название ингредиента (локализованное)
         if (ingNameText != null)
-            ingNameText.text = item.title;
+            SetLocText(ingNameText, "Ingredients", IngredientToKey(item.ingredientId));
 
-        // цену оставляем всегда числом
+        // Цена всегда числом
         if (ingPriceText != null)
             ingPriceText.text = item.price.ToString();
 
         if (bought)
         {
             if (ingBuyButton != null) ingBuyButton.interactable = false;
-            if (ingBuyButtonText != null) ingBuyButtonText.text = "Куплено";
+            if (ingBuyButtonText != null) SetLocText(ingBuyButtonText, "shop_bought");
             return;
         }
 
         if (!dayOk)
         {
+            // Доступно с дня {0}
             if (ingNameText != null)
-                ingNameText.text = $"Доступно с дня {item.requiredDay}";
+                SetLocTextFormat(ingNameText, "UI", "shop_available_from_day", item.requiredDay);
 
             if (ingBuyButton != null) ingBuyButton.interactable = false;
-            if (ingBuyButtonText != null) ingBuyButtonText.text = "Закрыто";
+            if (ingBuyButtonText != null) SetLocText(ingBuyButtonText, "shop_closed");
             return;
         }
 
         if (ingBuyButton != null) ingBuyButton.interactable = enoughMoney;
-        if (ingBuyButtonText != null) ingBuyButtonText.text = enoughMoney ? "Купить" : "Не хватает";
+
+        if (ingBuyButtonText != null)
+            SetLocText(ingBuyButtonText, enoughMoney ? "shop_buy" : "shop_not_enough");
     }
 
     private void PlayUIBuySuccess()
@@ -2692,6 +2827,113 @@ public class GameFlowController : MonoBehaviour
             if (a.items[i].count != b.items[i].count) return false;
         }
         return true;
+    }
+
+    private void OnApplicationPause(bool pause)
+    {
+        if (pause && !TutorialBlocksSaving())
+            SaveProgress();
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (!TutorialBlocksSaving())
+            SaveProgress();
+    }
+    private bool TutorialBlocksSaving()
+    {
+        // пока туториал не пройден — не сохраняем
+        if (PlayerPrefs.GetInt("tutorial_done", 0) == 0)
+            return true;
+
+        return false;
+    }
+
+    private void SetLocText(TMP_Text label, string key)
+    {
+        SetLocText(label, "UI", key);
+    }
+
+    private void SetLocText(TMP_Text label, string table, string key)
+    {
+        if (label == null) return;
+        StartCoroutine(SetLocTextCo(label, table, key));
+    }
+
+    private IEnumerator SetLocTextCo(TMP_Text label, string table, string key)
+    {
+        yield return LocalizationSettings.InitializationOperation;
+
+        var ls = new LocalizedString(table, key);
+        var handle = ls.GetLocalizedStringAsync();
+        yield return handle;
+
+        label.text = handle.Result;
+    }
+
+    private void SetLocTextFormat(TMP_Text label, string key, params object[] args)
+    {
+        SetLocTextFormat(label, "UI", key, args);
+    }
+
+    private void SetLocTextFormat(TMP_Text label, string table, string key, params object[] args)
+    {
+        if (label == null) return;
+        StartCoroutine(SetLocTextFormatCo(label, table, key, args));
+    }
+
+    private IEnumerator SetLocTextFormatCo(TMP_Text label, string table, string key, object[] args)
+    {
+        yield return LocalizationSettings.InitializationOperation;
+
+        var ls = new LocalizedString(table, key);
+        var handle = ls.GetLocalizedStringAsync();
+        yield return handle;
+
+        label.text = string.Format(handle.Result, args);
+    }
+
+    private string L(string table, string key)
+    {
+        return LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+    }
+
+    private void HandleLocaleChanged(Locale _)
+    {
+        var def = GetDefaultIngredientSelection();
+        UpdateOrderText(); // пересобираем строку "Заказ" + имена
+        ApplyIngredientRightCard(def);
+        UpdateDayProgressUI();
+        UpdateComboUI();
+        UpdateMoneyUI();
+        UpdateIncomeX2UI();
+
+        // ВАЖНО: если сейчас готовка — НЕ трогаем кнопку действия (ею рулит CookingController)
+        if (cooking != null && cooking.OwnsActionButton)
+            return;
+
+        // обновить главный action button
+        if (!string.IsNullOrEmpty(_actionButtonKey))
+            SetActionButtonKey(_actionButtonKey);
+    }
+
+    private void SetLocTextInstant(TMP_Text label, string key)
+    {
+        SetLocTextInstant(label, "UI", key);
+    }
+
+    private void SetLocTextInstant(TMP_Text label, string table, string key)
+    {
+        if (label == null) return;
+        label.text = LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+    }
+
+    private void SetActionButtonKey(string key)
+    {
+        _actionButtonKey = key;
+
+        if (actionButtonText != null)
+            SetLocTextInstant(actionButtonText, "UI", key);
     }
 
 }

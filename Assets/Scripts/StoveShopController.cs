@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 public class StoveShopController : MonoBehaviour
 {
@@ -20,6 +22,7 @@ public class StoveShopController : MonoBehaviour
     [SerializeField] private TMP_Text windowBonusText;
 
     private GameFlowController _game;
+    private bool _inited;
 
     public void Init(GameFlowController game)
     {
@@ -28,7 +31,42 @@ public class StoveShopController : MonoBehaviour
         if (buyButton != null)
             buyButton.onClick.AddListener(OnBuyClicked);
 
+        _inited = true;
         Refresh();
+    }
+
+    private void OnEnable()
+    {
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
+    }
+
+    private void OnDisable()
+    {
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
+    }
+
+    private void HandleLocaleChanged(Locale _)
+    {
+        // если контроллер уже инициализирован — перерисуем тексты
+        if (_inited)
+            Refresh();
+    }
+
+    private string L(string table, string key)
+    {
+        return LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+    }
+
+    private void SetTextFormat(TMP_Text label, string table, string key, params object[] args)
+    {
+        if (label == null) return;
+        label.text = string.Format(L(table, key), args);
+    }
+
+    private void SetTextKey(TMP_Text label, string table, string key)
+    {
+        if (label == null) return;
+        label.text = L(table, key);
     }
 
     public void Refresh()
@@ -38,17 +76,21 @@ public class StoveShopController : MonoBehaviour
         int lvl = _game.GetStoveLevel();
         int coins = _game.GetCoins();
 
-        if (levelText != null)
-            levelText.text = $"Уровень плиты: {lvl}";
+        // UI/stove_level : "Уровень плиты: {0}" / "Stove level: {0}"
+        SetTextFormat(levelText, "UI", "stove_level", lvl);
 
         // если упёрлись в максимум
         if (lvl >= maxLevel)
         {
-            if (priceText != null) priceText.text = "МАКС";
+            // UI/stove_max : "МАКС" / "MAX"
+            SetTextKey(priceText, "UI", "stove_max");
+
             if (buyButton != null) buyButton.interactable = false;
-            if (buyButtonText != null) buyButtonText.text = "Макс";
-            if (speedBonusText != null) speedBonusText.text = "Макс";
-            if (windowBonusText != null) windowBonusText.text = "Макс";
+
+            // UI/stove_max_short : "Макс" / "Max"
+            SetTextKey(buyButtonText, "UI", "stove_max_short");
+            SetTextKey(speedBonusText, "UI", "stove_max_short");
+            SetTextKey(windowBonusText, "UI", "stove_max_short");
             return;
         }
 
@@ -60,11 +102,11 @@ public class StoveShopController : MonoBehaviour
         int speedPct = Mathf.RoundToInt(18f * (nextLevel - 1));
         int windowPct = Mathf.RoundToInt(15f * (nextLevel - 1));
 
-        if (speedBonusText != null)
-            speedBonusText.text = $"+{speedPct}% скорость";
+        // UI/stove_bonus_speed : "+{0}% скорость" / "+{0}% speed"
+        SetTextFormat(speedBonusText, "UI", "stove_bonus_speed", speedPct);
 
-        if (windowBonusText != null)
-            windowBonusText.text = $"+{windowPct}% время перегорания";
+        // UI/stove_bonus_burn : "+{0}% время перегорания" / "+{0}% burn time"
+        SetTextFormat(windowBonusText, "UI", "stove_bonus_burn", windowPct);
 
         int price = GetPrice(nextLevel);
 
@@ -78,8 +120,17 @@ public class StoveShopController : MonoBehaviour
 
         if (buyButtonText != null)
         {
-            if (!dayOk) buyButtonText.text = $"Доступно с дня {reqDay}";
-            else buyButtonText.text = enough ? "Улучшить" : "Не хватает";
+            if (!dayOk)
+            {
+                // UI/shop_available_from_day : "Доступно с дня {0}" / "Available on day {0}"
+                buyButtonText.text = string.Format(L("UI", "shop_available_from_day"), reqDay);
+            }
+            else
+            {
+                // UI/stove_upgrade : "Улучшить" / "Upgrade"
+                // UI/shop_not_enough : "Не хватает" / "Not enough"
+                SetTextKey(buyButtonText, "UI", enough ? "stove_upgrade" : "shop_not_enough");
+            }
         }
     }
 

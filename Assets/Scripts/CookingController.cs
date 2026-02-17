@@ -3,12 +3,17 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using System.Collections;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 
 public class CookingController : MonoBehaviour
 {
     private bool _fryLoopActive = false;
     private bool _inputLocked = false;
+
+    private string _actionKey;
+    private string _hintKey;
 
     public CookState CurrentState => _state;
     public event Action Cooked;
@@ -75,11 +80,28 @@ public class CookingController : MonoBehaviour
 
 
 
+    public bool OwnsActionButton =>
+    isActiveAndEnabled && _state != CookState.Done;
 
     // internal
     private CookState _state = CookState.WaitingPour;
     private float _stateTimer = 0f; // сколько прошло времени внутри текущего состояния
     private float _windowTimer = 0f;
+
+    private void OnEnable()
+    {
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
+    }
+
+    private void OnDisable()
+    {
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
+    }
+
+    private void HandleLocaleChanged(Locale _)
+    {
+        RefreshLocalizedUIByState();
+    }
 
     private void Awake()
     {
@@ -111,7 +133,7 @@ public class CookingController : MonoBehaviour
                 break;
 
             case CookState.WaitingFlip:
-                TickWindow(nextStateOnSuccess: CookState.CookingSideB, buttonLabel: "Перевернуть");
+                TickWindow(CookState.CookingSideB, "cook_action_flip");
                 break;
 
             case CookState.CookingSideB:
@@ -119,7 +141,7 @@ public class CookingController : MonoBehaviour
                 break;
 
             case CookState.WaitingFinish:
-                TickWindow(nextStateOnSuccess: CookState.Done, buttonLabel: "Приготовить");
+                TickWindow(CookState.Done, "cook_action_finish");
                 break;
 
             case CookState.Burned:
@@ -160,27 +182,28 @@ public class CookingController : MonoBehaviour
 
             if (isSecondSide)
             {
-                SetUI("Приготовить", "Нажми 'Приготовить' в течение окна!");
+                ApplyUIKeys("cook_action_finish", "cook_hint_press_finish");
             }
             else
             {
-                SetUI("Перевернуть", "Нажми 'Перевернуть' в течение окна!");
+                ApplyUIKeys("cook_action_flip", "cook_hint_press_flip");
             }
         }
     }
 
-    private void TickWindow(CookState nextStateOnSuccess, string buttonLabel)
+    private void TickWindow(CookState nextStateOnSuccess, string actionKey)
     {
         _windowTimer += Time.deltaTime;
         SetTimerUI(tapWindow - _windowTimer);
 
-        // Подсказка/текст кнопки держим
-        if (actionButtonText != null) actionButtonText.text = buttonLabel;
+        // держим текущий ключ (если вдруг кто-то перезаписал)
+        if (_actionKey != actionKey)
+            _actionKey = actionKey;
+
+        SetLocTextInstant(actionButtonText, "UI", _actionKey);
 
         if (_windowTimer >= tapWindow)
-        {
             BurnPancake();
-        }
     }
 
     private void OnActionButtonClicked()
@@ -239,7 +262,7 @@ public class CookingController : MonoBehaviour
         if (pancakeImage != null)
             pancakeImage.color = sideAColor;
 
-        SetUI("...", "Жарим сторону 1...");
+        ApplyUIKeys("cook_action_wait", "cook_hint_side_1");
         SetTimerUI(cookDuration);
         StartFryLoop();
     }
@@ -249,7 +272,7 @@ public class CookingController : MonoBehaviour
         _state = CookState.CookingSideB;
         _stateTimer = 0f;
 
-        SetUI("...", "Жарим сторону 2...");
+        ApplyUIKeys("cook_action_wait", "cook_hint_side_2");
         SetTimerUI(cookDuration);
         StartFryLoop();
     }
@@ -257,7 +280,7 @@ public class CookingController : MonoBehaviour
     private void FinishPancake()
     {
         _state = CookState.Done;
-        SetUI("Новый блин", "Готово! (кликни, чтобы начать снова)");
+        ApplyUIKeys("cook_action_new", "cook_hint_done");
         SetTimerUI(0f);
         Cooked?.Invoke();
     }
@@ -270,7 +293,7 @@ public class CookingController : MonoBehaviour
         if (pancakeImage != null)
             pancakeImage.color = burnedColor;
 
-        SetUI("Новый блин", "Сгорел! (кликни, чтобы начать снова)");
+        ApplyUIKeys("cook_action_new", "cook_hint_burned");
         SetTimerUI(0f);
 
         // TODO позже: штраф по монетам
@@ -285,7 +308,7 @@ public class CookingController : MonoBehaviour
     {
         _state = CookState.WaitingPour;
 
-        SetUI("Залить тесто", "");   //  важно: вернуть UI в исходный вид
+        ApplyUIKeys("cook_action_pour", "cook_hint_empty");
         SetTimerUIOff();
 
         if (actionButton != null)
@@ -597,6 +620,55 @@ public class CookingController : MonoBehaviour
     public void StopCookingSfx()
     {
         if (sfxSource != null) sfxSource.Stop();
+    }
+
+    private void SetLocTextInstant(TMP_Text label, string table, string key)
+    {
+        if (label == null) return;
+        label.text = LocalizationSettings.StringDatabase.GetLocalizedString(table, key);
+    }
+
+    private void ApplyUIKeys(string actionKey, string hintKey)
+    {
+        _actionKey = actionKey;
+        _hintKey = hintKey;
+
+        SetLocTextInstant(actionButtonText, "UI", _actionKey);
+        SetLocTextInstant(hintText, "UI", _hintKey);
+    }
+
+    private void RefreshLocalizedUIByState()
+    {
+        switch (_state)
+        {
+            case CookState.WaitingPour:
+                ApplyUIKeys("cook_action_pour", "cook_hint_empty");
+                break;
+
+            case CookState.CookingSideA:
+                ApplyUIKeys("cook_action_wait", "cook_hint_side_1");
+                break;
+
+            case CookState.WaitingFlip:
+                ApplyUIKeys("cook_action_flip", "cook_hint_press_flip");
+                break;
+
+            case CookState.CookingSideB:
+                ApplyUIKeys("cook_action_wait", "cook_hint_side_2");
+                break;
+
+            case CookState.WaitingFinish:
+                ApplyUIKeys("cook_action_finish", "cook_hint_press_finish");
+                break;
+
+            case CookState.Done:
+                ApplyUIKeys("cook_action_new", "cook_hint_done");
+                break;
+
+            case CookState.Burned:
+                ApplyUIKeys("cook_action_new", "cook_hint_burned");
+                break;
+        }
     }
 
 }

@@ -3,9 +3,13 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 public class TutorialController : MonoBehaviour
 {
+    private const string PP_TUTORIAL_DONE = "tutorial_done";
+
     // Локализация не влияет: туториал работает по действиям/хукам, а не по текстам.
     public enum Step
     {
@@ -30,7 +34,7 @@ public class TutorialController : MonoBehaviour
     }
 
     [Header("Debug")]
-    [SerializeField] private bool forceTutorialEveryPlay = true;
+    [SerializeField] private bool forceTutorialEveryPlay = false; // ✅ в релизе false
 
     [Header("UI - Overlay")]
     [SerializeField] private GameObject overlayRoot;              // TutorialOverlay
@@ -81,6 +85,9 @@ public class TutorialController : MonoBehaviour
 
     private Coroutine _dimFadeCo;
     private Step _step = Step.None;
+    private string _msgKey;
+    private object[] _msgArgs;
+
 
     // restore state
     private bool[] _buttonsPrev;
@@ -106,9 +113,35 @@ public class TutorialController : MonoBehaviour
 
     public void TryStart()
     {
-        if (!forceTutorialEveryPlay && PlayerPrefs.GetInt("tutorial_done", 0) == 1)
+        // DEV: всегда показывать
+        if (forceTutorialEveryPlay)
+        {
+            StartWelcome();
+            return;
+        }
+
+        // если туториал уже пройден
+        if (PlayerPrefs.GetInt(PP_TUTORIAL_DONE, 0) == 1)
         {
             SetOverlayVisible(false);
+            FadeDim(false);
+            _step = Step.Finished;
+            return;
+        }
+
+        // ✅ если джем уже разблокирован — считаем туториал пройденным
+        var data = ProgressService.Load(); // struct
+        bool hasJam = ProgressService.HasIngredient(
+            data.ingredientMask,
+            ProgressService.IngredientBit.Jam
+        );
+
+        if (hasJam)
+        {
+            PlayerPrefs.SetInt(PP_TUTORIAL_DONE, 1);
+            PlayerPrefs.Save();
+
+            if (overlayRoot != null) overlayRoot.SetActive(false);
             _step = Step.Finished;
             return;
         }
@@ -120,8 +153,6 @@ public class TutorialController : MonoBehaviour
     // Public hooks from GameFlow
     // -----------------------------
 
-    // Вызывай из GameFlowController ДО основной логики кнопки:
-    // tutorial.NotifyAction(action);
     public void NotifyAction(TutorialAction action)
     {
         if (!IsActive) return;
@@ -145,7 +176,6 @@ public class TutorialController : MonoBehaviour
         }
     }
 
-    // Вызывай после начисления монет за заказ
     public void OnOrderCompleted(int currentCoins)
     {
         if (_step != Step.RepeatOrders) return;
@@ -154,7 +184,6 @@ public class TutorialController : MonoBehaviour
             StartBuyIngredient();
     }
 
-    // Вызывай когда реально открылся магазин (после клика ShopButton / показ ShopPopup)
     public void OnShopOpened()
     {
         if (_step != Step.BuyIngredient) return;
@@ -163,32 +192,62 @@ public class TutorialController : MonoBehaviour
         SetOverlayBlocking(true);
         ApplyLayout(layoutBuyJam);
 
-        messageText.text = "Купи джем, чтобы добавлять начинку.";
+        SetMessage("tut_buy_jam");
         AllowOnly(firstIngredientButton);
 
-        // ActionButton в этот момент должен оставаться заблокирован:
         SetActionHardBlocked(true);
     }
 
-    // Вызывай после успешной покупки Btn_Jam
     public void OnFirstIngredientBought()
     {
         if (_step != Step.BuyIngredient) return;
-        StartExitShop(); // ✅ теперь после покупки просим выйти из магазина
+        StartExitShop();
     }
 
-    // Вызывай когда магазин реально закрылся (после нажатия X / Close или скрытия ShopPopup)
     public void OnShopClosed()
     {
         if (_step != Step.ExitShop) return;
         StartToppingHint();
     }
 
-    // Вызывай только после реального нанесения начинки (выбрал джем + тап по блину)
     public void OnToppingApplied()
     {
         if (_step != Step.ToppingHint) return;
         StartFinalMessage();
+    }
+
+
+    private void OnEnable()
+    {
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
+    }
+
+    private void OnDisable()
+    {
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
+    }
+
+    private void HandleLocaleChanged(Locale _)
+    {
+        // Перерисовать текущий текст туториала на новом языке
+        ReapplyMessage();
+    }
+
+    private void SetMessage(string key, params object[] args)
+    {
+        _msgKey = key;
+        _msgArgs = args;
+
+        if (messageText == null) return;
+
+        string template = LocalizationSettings.StringDatabase.GetLocalizedString("Tutorial", key);
+        messageText.text = (args == null || args.Length == 0) ? template : string.Format(template, args);
+    }
+
+    private void ReapplyMessage()
+    {
+        if (string.IsNullOrEmpty(_msgKey)) return;
+        SetMessage(_msgKey, _msgArgs);
     }
 
     // -----------------------------
@@ -203,7 +262,6 @@ public class TutorialController : MonoBehaviour
         CacheBlockStateOnce();
         SetGlobalBlocked(true);
 
-        // жёстко блокируем конкретные проблемные кнопки
         SetAdsHardBlocked(true);
         SetActionHardBlocked(true);
 
@@ -213,15 +271,17 @@ public class TutorialController : MonoBehaviour
 
         ApplyLayout(layoutWelcome);
 
-        messageText.text =
-            "Добро пожаловать на кухню!\n" +
-            "Сейчас быстро научу тебя выполнять заказы.\n\n" +
-            "Нажми «Начать», когда будешь готов.";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.Center;
+        SetMessage("tut_welcome");
     }
 
     private void StartPour()
     {
         _step = Step.Pour;
+
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
 
         FadeDim(false);
         SetOverlayVisible(true);
@@ -230,48 +290,53 @@ public class TutorialController : MonoBehaviour
 
         ApplyLayout(layoutCooking);
 
-        // ActionButton нужен
         SetActionHardBlocked(false);
-        // ADS во время туториала блокируем всегда
         SetAdsHardBlocked(true);
 
         AllowOnly(actionButton);
-
-        messageText.text = "Шаг 1/3\nНажми «Залить тесто».";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_step1_pour");
     }
 
     private void StartFlip()
     {
         _step = Step.Flip;
 
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
+
         ApplyLayout(layoutCooking);
 
-        // ActionButton нужен
         SetActionHardBlocked(false);
         SetAdsHardBlocked(true);
-
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
         AllowOnly(actionButton);
-
-        messageText.text = "Шаг 2/3\nПереверни вовремя — блин может сгореть!";
+        SetMessage("tut_step2_flip");
     }
 
     private void StartPack()
     {
         _step = Step.Pack;
 
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
+
         ApplyLayout(layoutCooking);
 
         SetActionHardBlocked(false);
         SetAdsHardBlocked(true);
 
         AllowOnly(actionButton);
-
-        messageText.text = "Шаг 3/3\nТеперь упакуй заказ.";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_step3_pack");
     }
 
     private void StartRepeatOrders()
     {
         _step = Step.RepeatOrders;
+
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
 
         ApplyLayout(layoutRepeat);
 
@@ -283,13 +348,16 @@ public class TutorialController : MonoBehaviour
         SetAdsHardBlocked(true);
 
         AllowOnly(actionButton, pancakeButton);
-
-        messageText.text = $"Сделай ещё пару заказов,\nчтобы накопить {moneyGoalForFirstIngredient} монет";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_repeat_orders_goal", moneyGoalForFirstIngredient);
     }
 
     private void StartBuyIngredient()
     {
         _step = Step.BuyIngredient;
+
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
 
         StopSoftHideOverlay();
 
@@ -299,11 +367,10 @@ public class TutorialController : MonoBehaviour
 
         ApplyLayout(layoutShop);
 
-        // ВАЖНО: ActionButton тут должен быть железно заблокирован
         SetActionHardBlocked(true);
         SetAdsHardBlocked(true);
-
-        messageText.text = "Отлично!\nОткрой магазин.";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_open_shop");
 
         AllowOnly(shopButton);
     }
@@ -312,25 +379,29 @@ public class TutorialController : MonoBehaviour
     {
         _step = Step.ExitShop;
 
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
+
         SetOverlayVisible(true);
         SetOverlayBlocking(true);
         SetContinueVisible(false);
 
         ApplyLayout(layoutExitShop);
 
-        // Пока магазин открыт — блокируем игру полностью
         SetActionHardBlocked(true);
         SetAdsHardBlocked(true);
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_close_shop");
 
-        messageText.text = "Отлично!\nТеперь закрой магазин.";
-
-        // Разрешаем только кнопку закрытия магазина
         AllowOnly(shopCloseButton);
     }
 
     private void StartToppingHint()
     {
         _step = Step.ToppingHint;
+
+
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.TopLeft;
 
         SetOverlayVisible(true);
         SetOverlayBlocking(false);
@@ -342,11 +413,8 @@ public class TutorialController : MonoBehaviour
         SetAdsHardBlocked(true);
 
         AllowOnly(firstIngredientButton, pancakeButton, actionButton);
-
-        messageText.text =
-            "Когда приготовится блин:\n" +
-            "1) Нажми на джем внизу\n" +
-            "2) Тапни по блину, чтобы нанести";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        SetMessage("tut_topping_hint");
     }
 
     private void StartFinalMessage()
@@ -362,11 +430,9 @@ public class TutorialController : MonoBehaviour
 
         SetActionHardBlocked(true);
         SetAdsHardBlocked(true);
-
-        messageText.text =
-            "Отлично!\n" +
-            "Начинка увеличивает награду\n" +
-            "Продолжай играть!";
+        messageText.alignment = TMPro.TextAlignmentOptions.Center;
+        if (messageText != null) messageText.alignment = TextAlignmentOptions.Center;
+        SetMessage("tut_final");
     }
 
     private void Finish()
@@ -384,8 +450,12 @@ public class TutorialController : MonoBehaviour
 
         SetOverlayVisible(false);
 
-        PlayerPrefs.SetInt("tutorial_done", 1);
+        PlayerPrefs.SetInt(PP_TUTORIAL_DONE, 1);
         PlayerPrefs.Save();
+
+        var gf = FindObjectOfType<GameFlowController>();
+        if (gf != null)
+            gf.SaveProgressPublic();
     }
 
     // -----------------------------
@@ -431,12 +501,17 @@ public class TutorialController : MonoBehaviour
     }
 
     // -----------------------------
-    // Panel layout (pos + size) with safe coroutines
+    // Panel layout (pos + size)
     // -----------------------------
 
     private void ApplyLayout(PanelLayout layout, bool instant = false)
     {
         if (panelRect == null) return;
+
+
+        // если мы не в иерархии — просто применим мгновенно
+        if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+            instant = true;
 
         StopLayoutAnim();
 
@@ -459,7 +534,7 @@ public class TutorialController : MonoBehaviour
             case Step.Flip:
             case Step.Pack: return layoutCooking;
             case Step.RepeatOrders: return layoutRepeat;
-            case Step.BuyIngredient: return layoutBuyJam; // базово: если хочешь, оставь layoutShop только в StartBuyIngredient()
+            case Step.BuyIngredient: return layoutBuyJam;
             case Step.ExitShop: return layoutExitShop;
             case Step.ToppingHint: return layoutTopping;
             case Step.FinalMessage: return layoutFinal;
@@ -550,7 +625,6 @@ public class TutorialController : MonoBehaviour
 
     private void SetGlobalBlocked(bool blocked)
     {
-        // Buttons
         if (buttonsToBlock != null)
         {
             for (int i = 0; i < buttonsToBlock.Length; i++)
@@ -563,7 +637,6 @@ public class TutorialController : MonoBehaviour
             }
         }
 
-        // Objects
         if (objectsToBlock != null)
         {
             for (int i = 0; i < objectsToBlock.Length; i++)
@@ -577,11 +650,8 @@ public class TutorialController : MonoBehaviour
         }
     }
 
-    // Важно: этот AllowOnly выключает ВСЁ, чем туториал управляет,
-    // чтобы никакие "внешние" включения не мешали.
     private void AllowOnly(params Button[] allowed)
     {
-        // 1) выключаем управляемые кнопки
         if (actionButton != null) actionButton.interactable = false;
         if (pancakeButton != null) pancakeButton.interactable = false;
         if (shopButton != null) shopButton.interactable = false;
@@ -592,14 +662,13 @@ public class TutorialController : MonoBehaviour
             foreach (var b in buttonsToBlock)
                 if (b != null) b.interactable = false;
 
-        // 2) включаем только разрешённые
         if (allowed != null)
             foreach (var a in allowed)
                 if (a != null) a.interactable = true;
     }
 
     // -----------------------------
-    // Hard locks (CanvasGroup)
+    // Hard locks
     // -----------------------------
 
     private void SetAdsHardBlocked(bool blocked)
@@ -616,9 +685,23 @@ public class TutorialController : MonoBehaviour
         actionButtonCanvasGroup.blocksRaycasts = !blocked;
     }
 
+    // -----------------------------
+    // Dim background
+    // -----------------------------
+
     private void FadeDim(bool show)
     {
         if (dimImage == null) return;
+
+        // ✅ если объект туториала не активен — просто выставляем состояние без корутин
+        if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+        {
+            var c = dimImage.color;
+            c.a = show ? dimMaxAlpha : 0f;
+            dimImage.color = c;
+            dimImage.gameObject.SetActive(show);
+            return;
+        }
 
         if (show)
             dimImage.gameObject.SetActive(true);
@@ -653,14 +736,45 @@ public class TutorialController : MonoBehaviour
         c.a = targetAlpha;
         dimImage.color = c;
 
-        // если полностью выключили — можно отключить Image
         if (!show)
             dimImage.gameObject.SetActive(false);
 
         _dimFadeCo = null;
     }
 
+
+    // -----------------------------
+    // DEV: reset tutorial progress
+    // -----------------------------
+
+
+
+    public void ResetTutorialProgress()
+    {
+        PlayerPrefs.SetInt(PP_TUTORIAL_DONE, 0);
+        PlayerPrefs.Save();
+
+        // Если туториал сейчас был активен — убираем и возвращаем управление
+        FadeDim(false);
+        StopSoftHideOverlay();
+        StopLayoutAnim();
+
+        SetGlobalBlocked(false);
+        SetAdsHardBlocked(false);
+        SetActionHardBlocked(false);
+
+        SetOverlayVisible(false);
+        _step = Step.None;
+    }
+
 #if UNITY_EDITOR
+    [ContextMenu("DEV: Reset Tutorial Progress")]
+    private void DevResetTutorialProgress()
+    {
+        ResetTutorialProgress();
+        Debug.Log("[TUTORIAL] tutorial_done reset.");
+    }
+
     [ContextMenu("DEBUG: Apply Layout For Current Step")]
     private void DebugApplyLayoutForCurrentStep()
     {

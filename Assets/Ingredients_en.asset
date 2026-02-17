@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Ingredients_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 0e4ce16aac9a4944e9ae9a8186735e01, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 16598282240
+    m_Localized: Jam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 228234473472
+    m_Localized: Cream
+    m_Metadata:
+      m_Items: []
+  - m_Id: 274808025088
+    m_Localized: Chocolate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 303060856832
+    m_Localized: Honey
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332630700032
+    m_Localized: Maple syrup
+    m_Metadata:
+      m_Items: []
+  - m_Id: 373349003264
+    m_Localized: Peanut butter
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

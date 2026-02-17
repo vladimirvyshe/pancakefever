@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Tutorial Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Tutorial
+  m_TableCollectionNameGuidString: 19af044e345a2cc4db5091643537de3f
+  m_Entries:
+  - m_Id: 6288683008
+    m_Key: tut_welcome
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49850724352
+    m_Key: tut_step1_pour
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91202367488
+    m_Key: tut_step2_flip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 148219736064
+    m_Key: tut_step3_pack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 205530705920
+    m_Key: tut_repeat_orders_goal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 280323534848
+    m_Key: tut_open_shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312611287040
+    m_Key: tut_buy_jam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 376259850240
+    m_Key: tut_close_shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 409210302464
+    m_Key: tut_topping_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 485223673856
+    m_Key: tut_final
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3705035665408
+    m_Key: tut_btn_continue
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 5881715690084761600
+  references:
+    version: 2
+    RefIds:
+    - rid: 5881715690084761600
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1770897494960
