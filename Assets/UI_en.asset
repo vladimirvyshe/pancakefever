@@ -262,6 +262,18 @@ MonoBehaviour:
     m_Localized: Ingredients
     m_Metadata:
       m_Items: []
+  - m_Id: 4242615995576320
+    m_Localized: The pancake is burnt!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4243075146035200
+    m_Localized: New panckake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4243504751816704
+    m_Localized: Save the pancake
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

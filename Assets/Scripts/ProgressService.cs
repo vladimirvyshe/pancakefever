@@ -17,6 +17,9 @@ public static class ProgressService
     private const string PP_ORDERS_DONE = "pf_orders_done";
     private const string PP_EARNED_DAY = "pf_earned_day";
 
+    // ✅ ЯЗЫК (сохраняем отдельно, чтобы не ломать Save(Data d) во всей игре)
+    private const string PP_LANG = "pf_lang";
+
     // Биты покупок ингредиентов (базовые не храним — они всегда доступны)
     // Можно расширять без боли
     public enum IngredientBit
@@ -70,6 +73,11 @@ public static class ProgressService
         {
             // первый запуск или старый сейв без версии
             PlayerPrefs.SetInt(PP_VERSION, SAVE_VERSION);
+
+            // ✅ дефолтный язык, чтобы ключ сразу существовал (не обязательно, но аккуратно)
+            if (!PlayerPrefs.HasKey(PP_LANG))
+                PlayerPrefs.SetString(PP_LANG, "en");
+
             PlayerPrefs.Save();
         }
 
@@ -99,6 +107,17 @@ public static class ProgressService
         PlayerPrefs.Save();
     }
 
+    // ✅ API для языка
+    public static string LoadLanguage(string fallback = "en")
+        => PlayerPrefs.GetString(PP_LANG, fallback);
+
+    public static void SaveLanguage(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return;
+        PlayerPrefs.SetString(PP_LANG, code);
+        PlayerPrefs.Save();
+    }
+
     public static void ResetAll()
     {
         PlayerPrefs.DeleteKey(PP_VERSION);
@@ -113,6 +132,10 @@ public static class ProgressService
         PlayerPrefs.DeleteKey(PP_DIAMONDS);
         PlayerPrefs.DeleteKey(PP_ORDERS_DONE);
         PlayerPrefs.DeleteKey(PP_EARNED_DAY);
+
+        // ✅ язык тоже сбрасываем
+        PlayerPrefs.DeleteKey(PP_LANG);
+
         PlayerPrefs.Save();
     }
 
@@ -123,7 +146,7 @@ public static class ProgressService
         => mask | (1 << (int)bit);
 
     public static bool HasDecor(int mask, int decorId)
-    => (mask & (1 << decorId)) != 0;
+        => (mask & (1 << decorId)) != 0;
 
     public static int AddDecor(int mask, int decorId)
         => mask | (1 << decorId);

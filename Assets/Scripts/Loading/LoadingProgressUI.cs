@@ -81,7 +81,7 @@ public class LoadingProgressUI : MonoBehaviour
 
     private IEnumerator DotsRoutine()
     {
-        string baseText = "Загрузка";
+        string baseText = "";
         int dots = 0;
 
         while (true)

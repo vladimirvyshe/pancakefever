@@ -3,7 +3,7 @@ using UnityEngine.Advertisements;
 
 public class AdsManager : MonoBehaviour, IUnityAdsInitializationListener
 {
-    private const bool TEST_MODE = true;
+    private const bool TEST_MODE = false;
 
 #if UNITY_ANDROID
     private const string GAME_ID = "6032347"; // Android

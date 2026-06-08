@@ -283,6 +283,18 @@ MonoBehaviour:
     m_Key: btn_shop_decor
     m_Metadata:
       m_Items: []
+  - m_Id: 4242615995576320
+    m_Key: burn_pancake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4243075146035200
+    m_Key: btn_new_pancake
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4243504751816704
+    m_Key: safe_pancake
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

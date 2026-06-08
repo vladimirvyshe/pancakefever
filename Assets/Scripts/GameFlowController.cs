@@ -604,7 +604,7 @@ public class GameFlowController : MonoBehaviour
             return o;
 
         // 1–2 ингредиента
-        int count = Random.Range(1, 3);
+        int count = Random.Range(1, 5);
 
         // чтобы не повторять один и тот же ингредиент дважды в заказе
         for (int i = 0; i < count && pool.Count > 0; i++)
@@ -650,7 +650,7 @@ public class GameFlowController : MonoBehaviour
         if (o.items.Count >= 2)
         {
             o.items[0].id = IngredientId.Jam;
-            o.items[0].count = Random.Range(1, 4);
+            o.items[0].count = Random.Range(1, 5);
             return;
         }
 

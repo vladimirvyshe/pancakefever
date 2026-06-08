@@ -882,6 +882,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1436705894}
   - component: {fileID: 1436705895}
+  - component: {fileID: 1436705896}
   m_Layer: 5
   m_Name: Boot
   m_TagString: Untagged
@@ -920,6 +921,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83bb0b98d899a2e438496deed91117f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PerformanceBootstrap
+--- !u!114 &1436705896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1436705893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc1360c8f79eee48a728c8aa0da02f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalizationBootstrap
+  fallbackLanguage: en
 --- !u!1 &1831848028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1136,7 +1150,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 136.29, y: -719.74}
+  m_AnchoredPosition: {x: -0.000015259, y: -719.74}
   m_SizeDelta: {x: 589.6969, y: 200.076}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1999828386
@@ -1193,7 +1207,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0

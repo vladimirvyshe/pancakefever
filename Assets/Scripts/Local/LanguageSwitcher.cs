@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using TMPro;
 using UnityEngine.Localization.Settings;
 using System.Collections;
@@ -7,12 +7,27 @@ public class LanguageSwitcher : MonoBehaviour
 {
     [SerializeField] private TMP_Dropdown dropdown;
 
+    // ✅ Укажи тут корневой объект настроек (панель), чтобы скрывать её пока локализация готовится
+    // Если не хочешь — оставь null, просто не будет скрытия
+    [SerializeField] private GameObject settingsRootToHide;
+    [SerializeField] private CanvasGroup settingsCanvasGroup;
+
+    private void Awake()
+    {
+        if (settingsCanvasGroup != null)
+        {
+            settingsCanvasGroup.alpha = 0f;
+            settingsCanvasGroup.interactable = false;
+            settingsCanvasGroup.blocksRaycasts = false;
+        }
+    }
+
     private void Start()
     {
         if (dropdown == null) return;
 
         dropdown.onValueChanged.AddListener(OnDropdownChanged);
-        SyncDropdownWithCurrentLocale();
+        StartCoroutine(InitUI());
     }
 
     private void OnDestroy()
@@ -21,13 +36,30 @@ public class LanguageSwitcher : MonoBehaviour
             dropdown.onValueChanged.RemoveListener(OnDropdownChanged);
     }
 
+    private IEnumerator InitUI()
+    {
+        yield return LocalizationSettings.InitializationOperation;
+
+        SyncDropdownWithCurrentLocale();
+
+        if (settingsCanvasGroup != null)
+        {
+            settingsCanvasGroup.alpha = 1f;
+            settingsCanvasGroup.interactable = true;
+            settingsCanvasGroup.blocksRaycasts = true;
+        }
+    }
+
     private void OnDropdownChanged(int index)
     {
-        switch (index)
-        {
-            case 0: StartCoroutine(SetLocale("en")); break;
-            case 1: StartCoroutine(SetLocale("ru")); break;
-        }
+        string target = (index == 1) ? "ru" : "en";
+
+        var current = LocalizationSettings.SelectedLocale;
+        string currentCode = current != null ? current.Identifier.Code : "en";
+
+        if (currentCode == target) return;
+
+        StartCoroutine(SetLocale(target));
     }
 
     private IEnumerator SetLocale(string code)
@@ -39,6 +71,7 @@ public class LanguageSwitcher : MonoBehaviour
             if (locale.Identifier.Code == code)
             {
                 LocalizationSettings.SelectedLocale = locale;
+                ProgressService.SaveLanguage(code);
                 yield break;
             }
         }
@@ -49,7 +82,7 @@ public class LanguageSwitcher : MonoBehaviour
     private void SyncDropdownWithCurrentLocale()
     {
         var current = LocalizationSettings.SelectedLocale;
-        if (current == null) return;
+        if (current == null || dropdown == null) return;
 
         switch (current.Identifier.Code)
         {
